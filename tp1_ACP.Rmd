@@ -1,0 +1,92 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+tmp = c(9,12, 10, 15, 9, 10, 5, 10 ,8, 11, 13, 14, 11, 13, 8, 3, 15, 10)
+tmp = matrix(tmp, ncol = 3, nrow = 6, byrow = TRUE)
+data = data.frame(tmp)
+names(data) = c("M1", "M2", "M3")
+row.names(data) = c("Victorine", "Eugène", "Delphine", "Jacques", "Anastasie", "Honoré")
+data
+```
+
+```{r}
+cor(tmp)
+```
+
+```{r}
+library(alr3)
+library(ade4)
+library(caret)
+library(factoextra)
+
+data = BigMac2003
+preprocessParams = preProcess(data, method = c("center", "scale"))
+data = predict(preprocessParams, data)
+
+res.pca = dudi.pca(data, scannf = FALSE, nf=10)
+
+screeplot(res.pca, main ="Screeplot")
+
+fviz_eig(res.pca)
+```
+On remarque un point d'inflexion au niveau de la seconde composante. On décide de ne garder que les 2 premiers axes
+
+```{r}
+res.pca
+
+```
+
+
+% DE VARIANCE EXPLIQUEE
+
+```{r}
+round(res.pca$eig/sum(res.pca$eig),2)*100
+```
+Ex : le premier axe explique 54% de la variance totale.
+
+% DE VARIANCE EXPLIQUEE CUMULEE
+
+```{r}
+round(cumsum(res.pca$eig/sum(res.pca$eig)),2)*100
+```
+Les 2 premiers axes expliquent 67% de la variance !
+
+```{r}
+fviz_pca_var(res.pca,
+             col.var = "contrib", # Color by contributions to the PC
+             gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
+             repel = TRUE     # Avoid text overlapping
+             )
+```
+La grande majorité des variables sont bien rpz (proche du cercle)
+Teach GI, Teach NI, Apt, FoodIndex sonr corrélés positivement entre elles et négativement avec les vars. BigMac, Bread, Rice.
+C'est logique, plus le niveau de revenu annuel d'un enseignant (ou d'un quelconque employé) est élevé, moins le temps nécessaire pour pour s'acheter un bien est élevé. 
+
+TeachHours, le temps de travail des enseignants est décorrélé des précédentes variables. Il va nous permettre d'interpréter l'axe Dim1.
+
+Interprétation des axes : 
+
+- Le premier axe Dim1 peut s'interpréter comme le pouvoir d'achat
+- Le second axe Dim2 peut s'interpréter comme le temps de loisir disponible
+
+On va donc se demander dans la suite de l'étude, quelle est la ville idéale pour s'installer en tant qu'enseignant par exemple ! 
+
+```{r}
+fviz_pca_ind(res.pca,
+             col.ind = "cos2", # Qualité de représentation
+             gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
+             repel = TRUE     # Avoid text overlapping
+             )
+```
+
+Les villes idéales sont FrankFurt, Copen. Lux. On s'attendait à trouver de hauts revenus pour ces pays, en revanche la question se posait pour le pouvoir d'achat et le temps libre ! 
+
+Dans les pays d'Asie (HK, TKY), les profs bénéficient d'un fort pouvoir d'achat mais de très peu de temps libre !
+
+Ceux qui bénéficient des moins bonnes conditions sont les pays d'Afrique type Mumbai, Karachi etc... pays dont la situation économique est plus précaire.
+
+
+

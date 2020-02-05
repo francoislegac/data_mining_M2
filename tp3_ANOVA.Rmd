@@ -1,0 +1,36 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+
+```{r}
+df = OrchardSprays
+df.tmp = within(df, rm("rowpos", "colpos"))
+head(df.tmp)
+```
+
+```{r}
+str(df.tmp)
+```
+
+```{r}
+par(mfrow=c(1,2))
+plot(df.tmp$treatment, df.tmp$decrease, main="treatment = fct(decr)", xlab = "baisse de fréquentation", ylab= "type de traitement")
+plot(as.numeric(df.tmp$treatment), df.tmp$decrease, xlab = "baisse de fréquentation", ylab= "type de traitement", main="treatment = fct(decr)")
+```
+On obtient un boxplot dans le premier cas. Un scatterplot quand le type est considéré comme une variable quanti
+
+```{r}
+write.csv(df,"/Users/francoislegac/Desktop/M2 ISIFAR/DATAMINING/OrchardSprays.csv", row.names = TRUE)
+
+```
+
+```{r}
+library(ISwR)
+df = lung
+write.csv(df,"/Users/francoislegac/Desktop/M2 ISIFAR/DATAMINING/lung.csv", row.names = TRUE)
+```
+
+

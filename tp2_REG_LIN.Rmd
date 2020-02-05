@@ -1,0 +1,185 @@
+---
+title: "tp2"
+output: html_document
+---
+
+#TP2 REGRESSION LINEAIRE 
+
+
+```{r}
+library(MASS)
+df = cats
+summary(df)
+head(df)
+```
+Description du dataset :
+144 x 3
+Sex = variable quanti (2 modalités)
+Hwt = la masse du coeur, var quanti
+Bwt = la masse du corps, var quanti
+
+```{r}
+library(caret)
+
+#Validation Hold out
+x = 1:nrow(df)
+idx.train = sample(x, nrow(df)*0.7)
+X_train = df[idx.train,]
+X_test = df[-idx.train,]
+
+par(mfrow=c(2,2))
+hist(df$Bwt, main ="Hist. Bwt", xlab = "masse du corps")
+plot(density(df$Bwt, col="Blue"), main = "densité Bwt")
+abline(v = mean(df$Bwt), col ="red")
+hist(df$Hwt, main = "Hist. Hwt", xlab="masse du coeur")
+plot(density(df$Hwt, col="Blue"), main = "densité Hwt")
+abline(v = mean(df$Hwt), col ="red")
+summary(df[,2:3])
+```
+On observe une masse moyenne du corps à environ 2,7 kg. La distribution est décalée vers la gauche, avec une majorité de chats moins gros. 
+
+```{r}
+shapiro.test(df$Bwt)
+shapiro.test(df$Hwt)
+```
+Le shapiro test vérifie l'hypothèse H0: "la distribution est Gaussienne"
+Dans les deux cas, la p valeur est inférieure à aplha = 0,05. On rejette donc l'hypothèse null au risque 5%
+
+```{r}
+plot(x = df$Bwt, y=df$Hwt, main= "Nuage de points, masse du corps = fct masse du coeur", xlab = "Masse du corps", ylab = "Masse du coeur")
+
+```
+On obsèrve une corrélation posititive entre les deux variables quantitatives.
+
+```{r}
+lm1 = lm(Hwt~Bwt, data=X_train)
+summary(lm1)
+```
+Interprétation :
+On observe nos deux estimateurs : l'ordonnée à l'origine et le coef Bwt.
+t test : "H0: le coef Bwt vaut 0". La p-valeur est inférieur à 0.05. On rejette l'hypothèse nulle avec un risque 5% et on garde bien ce coefficient. 
+R^2 = 0.62. 62% de la variance de Hwt est expliquée par Bwt.
+```{r}
+confint(lm1)
+```
+Le paramètre Bwt a 95% de chances d'être dans l'intervalle [1.62; 4.51]
+
+```{r}
+plot(x = df$Bwt, y=df$Hwt, main= "Nuage de points, masse du corps = fct masse du coeur", xlab = "Masse du corps", ylab = "Masse du coeur")
+abline(a = lm1$coefficients[1], b = lm1$coefficients[2], col="red")
+lm1$coefficients
+```
+
+```{r}
+predictions = predict(lm1, X_test)
+y_test = X_test$Hwt
+res = y_test-predictions
+RQ = mean(res^2)
+RQ
+```
+On obtient un risque quadratique de 2.04 qu'on pourrait comparer avec un autre modèle de régression (ex: arbre de décision, boosting, svm, kernel méthode, KNN)
+
+#Prix de Vente des maisons 
+
+```{r}
+df2 = read.delim("houses.txt", sep=" ")
+head(df2)
+```
+SQFT = Square feet of living space
+Corner = corner location (yes or no)
+NE = North Est sector ?
+
+```{r}
+df2$NE = as.factor(df2$NE)
+df2$Corner = as.factor(df2$Corner)
+str(df2)
+```
+
+```{r}
+x = 1:nrow(df2)
+idx.train = sample(x, nrow(df2)*0.7)
+X_train = df2[idx.train,]
+X_test = df2[-idx.train,]
+
+```
+
+##Analyse variables quanti.
+```{r}
+sapply(df2, is.numeric)
+```
+
+```{r}
+library(corrplot)
+n.qvar = c("Price", "SQFT", "Age", "Features", "Tax")
+quant.vars = df2[,n.qvar]
+
+corr.df = cor(quant.vars)
+corrplot(corr.df, type="upper", method="color", addCoef.col = "black", t1.cex= .7, cl.cex = .7, number.cex=.7)
+```
+On remarque rapidement que la variable Price a l'air fortement correlée (positivement) avec la taille de la maison. Elle est correlée négativement (-0.42) avec le montant de taxes annuelles.
+
+##Analyse des variables qualitatives 
+
+```{r}
+ctNE = prop.table(table(df2$NE))
+ctCorner = prop.table(table(df2$Corner))
+par(mfrow=c(1,2))
+barplot(ctNE, main= "Distribution Nord Est", beside = FALSE)
+barplot(ctCorner, main= "Distribution Nord Est", beside = FALSE)
+```
+
+```{r}
+summary(df2$Price)
+df2$Price.cat = cut(df2$Price, breaks = 5)
+ctNE.Pr = prop.table(table(df2$NE, df2$Price.cat))
+round(ctNE.Pr,2)
+```
+On va procéder à un test de Fisher pour connaitre l'influence de l'exposition NE sur le prix.
+"H0: l'exposition NE a une influence sur le prix"
+```{r}
+fisher.test(df2$Price.cat, df2$NE)
+```
+On rejette l'hypothèse nulle avec un risque de se tromper de 5%. L'exposition NE n'a pas d'influence significative sur le Prix
+```{r}
+fisher.test(df2$Price.cat, df2$Corner)
+```
+On ne rejette pas l'hypothèse nulle "H0: le fait d'habiter dans un coin a une influence sur le prix". 
+
+```{r}
+within(quant.vars, rm(Price))
+plot(within(quant.vars, rm(Price)), df2$Price)
+```
+
+
+```{r}
+lm2 = lm(Price~., data=X_train)
+summary(lm2)
+```
+81% de la variance du Prix est expliquée par les predictors
+Les paramètres intéressants semblent être les suivants : SQFT, Tax et Corner 1. 
+
+```{r}
+step(lm2, direction = "backward")
+```
+On retrouve bien les 3 variables qui semblaient les plus importantes : la surface, habiter dans un coin ou non et le montant de taxe.
+```{r}
+lmfinal = lm(Price~SQFT+Corner+Tax, X_train)
+res = (lmfinal$residuals)
+par(mfrow=c(1,2))
+hist(res, main="Histogramme des résidus")
+plot(density(res), main="Densité des résidus")
+x = seq(-600, 600, 1)
+lines(x, dnorm(x, mean=mean(res), sd=sd(res)), type="l", col="red")
+
+```
+
+```{r}
+shapiro.test(res)
+mean(res)
+```
+
+On ne rejette pas l'hypothèse H0, les résidus suivent donc bien une loi gaussienne, centrée autour de 0.
+Notre modèle final, lmfinal semble donc correct. 
+```{r}
+predict(lmfinal, X_test)
+```
