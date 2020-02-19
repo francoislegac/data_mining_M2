@@ -3,6 +3,10 @@ Practical sessions from the course Machine Learning under the supervision of Aur
 - PCA
 - Linear Regression
 - ANOVA
+- Hierarchical clustering
 - K-MEANS
 - Gaussian Mixture
-[...]
+- Linear Discriminant analysis
+- Logistic Regression
+- Bagging & Random Forest 
+- Boosting 
