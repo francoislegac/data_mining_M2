@@ -10,3 +10,4 @@ Practical sessions from the course Machine Learning under the supervision of Aur
 - Logistic Regression
 - Bagging & Random Forest 
 - Boosting 
+- Neural Network
